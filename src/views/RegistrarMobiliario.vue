@@ -24,6 +24,7 @@
               v-model="form.codigo"
               :class="{ 'is-invalid': errors.codigo, 'is-valid': form.codigo && !errors.codigo }"
               @blur="validateField('codigo')"
+              @input="saveDraftNow"
               placeholder="ULEAM-XXXX"
             />
             <button 
@@ -33,9 +34,9 @@
             >
               <i class="fas fa-qrcode"></i> Generar
             </button>
-            <div v-if="errors.codigo" class="invalid-feedback">
-              {{ errors.codigo }}
-            </div>
+          </div>
+          <div v-if="errors.codigo" class="invalid-feedback d-block">
+            {{ errors.codigo }}
           </div>
         </div>
 
@@ -58,7 +59,7 @@
             <option value="pizarra">Pizarra</option>
             <option value="otro">Otro</option>
           </select>
-          <div v-if="errors.tipo" class="invalid-feedback">
+          <div v-if="errors.tipo" class="invalid-feedback d-block">
             {{ errors.tipo }}
           </div>
         </div>
@@ -98,7 +99,7 @@
             <option value="medicina">Medicina</option>
             <option value="educacion">Educación</option>
           </select>
-          <div v-if="errors.facultad" class="invalid-feedback">
+          <div v-if="errors.facultad" class="invalid-feedback d-block">
             {{ errors.facultad }}
           </div>
         </div>
@@ -110,6 +111,7 @@
             class="form-control" 
             id="aula"
             v-model="form.aula"
+            @input="saveDraftNow"
             placeholder="Ej: Aula 203, Lab 1"
           />
         </div>
@@ -120,6 +122,7 @@
             class="form-select" 
             id="responsable"
             v-model="form.responsable"
+            @change="saveDraftNow"
           >
             <option value="" disabled>Asignar a...</option>
             <option value="departamento">Departamento</option>
@@ -145,13 +148,14 @@
               id="estado"
               v-model="form.estado"
               :class="{ 'is-invalid': errors.estado }"
+              @change="saveDraftNow"
             >
               <option value="nuevo">Nuevo</option>
               <option value="bueno" selected>Bueno</option>
               <option value="regular">Regular</option>
               <option value="malo">Requiere reparación</option>
             </select>
-            <div v-if="errors.estado" class="invalid-feedback">
+            <div v-if="errors.estado" class="invalid-feedback d-block">
               {{ errors.estado }}
             </div>
           </div>
@@ -167,7 +171,7 @@
               @change="validateField('fecha_adquisicion')"
               :max="today"
             />
-            <div v-if="errors.fecha_adquisicion" class="invalid-feedback">
+            <div v-if="errors.fecha_adquisicion" class="invalid-feedback d-block">
               {{ errors.fecha_adquisicion }}
             </div>
           </div>
@@ -181,6 +185,7 @@
               v-model.number="form.valor"
               step="0.01" 
               min="0"
+              @input="saveDraftNow"
               placeholder="0.00"
             />
           </div>
@@ -253,39 +258,62 @@
     </form>
 
     <!-- Modal de éxito -->
-    <div 
-      class="modal fade" 
-      id="successModal" 
-      tabindex="-1" 
-      ref="successModal"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title">
-              <i class="fas fa-check-circle me-2"></i>¡Registro Exitoso!
-            </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body text-center">
-            <div class="mb-3">
-              <i class="fas fa-couch text-success" style="font-size: 3rem;"></i>
+    <Teleport to="body">
+      <div 
+        class="modal fade" 
+        id="successModal" 
+        tabindex="-1" 
+        ref="successModalRef"
+        data-bs-backdrop="static"
+        data-bs-keyboard="false"
+      >
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+              <h5 class="modal-title">
+                <i class="fas fa-check-circle me-2"></i>¡Registro Exitoso!
+              </h5>
+              <button type="button" class="btn-close btn-close-white" @click="closeModal"></button>
             </div>
-            <h6>Mobiliario registrado correctamente</h6>
-            <div v-if="lastRegistered" class="alert alert-success">
-              <strong>Código:</strong> {{ lastRegistered.codigo }}<br>
-              <strong>Tipo:</strong> {{ lastRegistered.tipo }}<br>
-              <strong>Ubicación:</strong> {{ lastRegistered.ubicacion?.edificio }}
+            <div class="modal-body text-center">
+              <div class="mb-3">
+                <i class="fas fa-couch text-success" style="font-size: 3rem;"></i>
+              </div>
+              <h6>Mobiliario registrado correctamente</h6>
+              <div v-if="lastRegistered" class="alert alert-success">
+                <strong>Código:</strong> {{ lastRegistered.codigo }}<br>
+                <strong>Tipo:</strong> {{ lastRegistered.tipo }}<br>
+                <strong>Facultad:</strong> {{ lastRegistered.facultad }}
+              </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+              <button type="button" class="btn btn-success" @click="closeModal">
+                <i class="fas fa-plus me-1"></i>Registrar Otro
+              </button>
+              <router-link to="/inventario" class="btn btn-outline-primary" @click="closeModal">
+                <i class="fas fa-list me-1"></i>Ver Inventario
+              </router-link>
             </div>
           </div>
-          <div class="modal-footer justify-content-center">
-            <button type="button" class="btn btn-success" data-bs-dismiss="modal">
-              <i class="fas fa-plus me-1"></i>Registrar Otro
-            </button>
-            <router-link to="/inventario" class="btn btn-outline-primary">
-              <i class="fas fa-list me-1"></i>Ver Inventario
-            </router-link>
-          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Toast de notificación alternativo -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div 
+        id="successToast" 
+        class="toast" 
+        role="alert" 
+        ref="successToastRef"
+      >
+        <div class="toast-header bg-success text-white">
+          <i class="fas fa-check-circle me-2"></i>
+          <strong class="me-auto">Éxito</strong>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+          Mobiliario registrado correctamente
         </div>
       </div>
     </div>
@@ -293,11 +321,10 @@
 </template>
 
 <script setup>
-import { Modal } from 'bootstrap'
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { Modal, Toast } from 'bootstrap'
+import { ref, reactive, computed, onMounted, onUnmounted, Teleport } from 'vue'
 import { useMobiliarioStore } from '@/stores/mobiliario'
 import { useAuthStore } from '@/stores/auth'
-
 
 const mobiliarioStore = useMobiliarioStore()
 const authStore = useAuthStore()
@@ -306,7 +333,9 @@ const loading = ref(false)
 const imagePreview = ref(null)
 const lastRegistered = ref(null)
 const autoSaveInterval = ref(null)
-const successModal = ref(null)
+const successModalRef = ref(null)
+const successToastRef = ref(null)
+const modalInstance = ref(null)
 
 const today = computed(() => new Date().toISOString().split('T')[0])
 
@@ -336,9 +365,52 @@ const errors = reactive({
 const formType = 'registro_mobiliario'
 
 // Métodos
+const closeModal = () => {
+  if (modalInstance.value) {
+    modalInstance.value.hide()
+    modalInstance.value = null
+  }
+}
+
+const showSuccessNotification = () => {
+  try {
+    // Intentar mostrar el modal
+    if (successModalRef.value) {
+      modalInstance.value = new Modal(successModalRef.value, {
+        backdrop: 'static',
+        keyboard: false
+      })
+      modalInstance.value.show()
+      
+      // Auto cerrar después de 5 segundos si el usuario no interactúa
+      setTimeout(() => {
+        if (modalInstance.value) {
+          closeModal()
+        }
+      }, 5000)
+      
+    } else {
+      throw new Error('Modal no disponible')
+    }
+  } catch (error) {
+    console.warn('No se pudo mostrar el modal, usando toast:', error)
+    // Fallback: mostrar toast
+    if (successToastRef.value) {
+      const toast = new Toast(successToastRef.value)
+      toast.show()
+    } else {
+      // Fallback final: alert nativo
+      alert('¡Mobiliario registrado correctamente!')
+    }
+  }
+}
+
 const generarCodigoQR = () => {
   const newCode = mobiliarioStore.generateCode()
   form.codigo = newCode
+  
+  // Validar el nuevo código
+  validateField('codigo')
   
   authStore.addRecentAction({
     type: 'generate_code',
@@ -346,20 +418,18 @@ const generarCodigoQR = () => {
     details: newCode
   })
   
-  // Mostrar notificación (se podría implementar un sistema de notificaciones)
-  console.log('Código generado exitosamente')
-  
   saveDraftNow()
 }
 
 const filterMaterialInput = (event) => {
-  // Solo permitir letras y espacios
-  event.target.value = event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')
+  // Solo permitir letras, espacios y algunos caracteres especiales
+  event.target.value = event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s-,]/g, '')
   form.material = event.target.value
+  saveDraftNow()
 }
 
 const updateCharCounter = () => {
-  // El contador se actualiza automáticamente via computed en el template
+  saveDraftNow()
 }
 
 const handleFileUpload = (event) => {
@@ -367,9 +437,9 @@ const handleFileUpload = (event) => {
   if (!file) return
 
   // Validar tipo de archivo
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg']
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp']
   if (!allowedTypes.includes(file.type)) {
-    errors.foto = 'Solo se permiten imágenes JPEG o PNG'
+    errors.foto = 'Solo se permiten imágenes JPEG, PNG o WebP'
     event.target.value = ''
     return
   }
@@ -395,7 +465,9 @@ const handleFileUpload = (event) => {
 const removeImage = () => {
   form.foto = null
   imagePreview.value = null
-  document.getElementById('foto').value = ''
+  const fileInput = document.getElementById('foto')
+  if (fileInput) fileInput.value = ''
+  errors.foto = ''
 }
 
 const validateField = (fieldName) => {
@@ -407,6 +479,8 @@ const validateField = (fieldName) => {
         errors.codigo = 'El código es obligatorio'
       } else if (!form.codigo.startsWith('ULEAM-')) {
         errors.codigo = 'El código debe empezar con ULEAM-'
+      } else if (form.codigo.length < 8) {
+        errors.codigo = 'El código debe tener al menos 8 caracteres'
       } else if (!mobiliarioStore.isCodeUnique(form.codigo)) {
         errors.codigo = 'Este código ya existe'
       }
@@ -432,8 +506,14 @@ const validateForm = () => {
   if (!form.codigo.trim()) {
     errors.codigo = 'El código es obligatorio'
     isValid = false
+  } else if (!form.codigo.startsWith('ULEAM-')) {
+    errors.codigo = 'El código debe empezar con ULEAM-'
+    isValid = false
+  } else if (form.codigo.length < 8) {
+    errors.codigo = 'El código debe tener al menos 8 caracteres'
+    isValid = false
   } else if (!mobiliarioStore.isCodeUnique(form.codigo)) {
-    errors.codigo = 'El código ya existe'
+    errors.codigo = 'Este código ya existe'
     isValid = false
   }
 
@@ -463,35 +543,54 @@ const validateForm = () => {
 
 const handleSubmit = async () => {
   if (!validateForm()) {
+    // Hacer scroll al primer error
+    const firstError = document.querySelector('.is-invalid')
+    if (firstError) {
+      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      firstError.focus()
+    }
     return
   }
 
   loading.value = true
 
   try {
+    // Simular delay de red para testing
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
     // Crear objeto de mobiliario
     const mobiliarioData = {
       ...form,
-      categoria: form.tipo
+      categoria: form.tipo,
+      fechaRegistro: new Date().toISOString()
     }
 
     // Guardar en el store
     const savedItem = mobiliarioStore.saveItem(mobiliarioData)
     lastRegistered.value = savedItem
 
+    // Registrar acción en el store de auth
+    authStore.addRecentAction({
+      type: 'register_furniture',
+      description: 'Registró nuevo mobiliario',
+      details: `${savedItem.tipo} - ${savedItem.codigo}`
+    })
+
     // Limpiar borrador
     mobiliarioStore.removeDraft(formType)
 
-    // Mostrar modal de éxito
-    const modal = new bootstrap.Modal(successModal.value)
-    modal.show()
+    // Mostrar notificación de éxito
+    showSuccessNotification()
 
     // Limpiar formulario
     clearForm()
 
   } catch (error) {
     console.error('Error al guardar:', error)
-    // Aquí se podría mostrar una notificación de error
+    
+    // Mostrar error
+    alert('Error al guardar el mobiliario. Por favor, intente nuevamente.')
+    
   } finally {
     loading.value = false
   }
@@ -584,6 +683,12 @@ onUnmounted(() => {
   if (autoSaveInterval.value) {
     clearInterval(autoSaveInterval.value)
   }
+  
+  // Limpiar modal si existe
+  if (modalInstance.value) {
+    modalInstance.value.dispose()
+    modalInstance.value = null
+  }
 })
 </script>
 
@@ -669,6 +774,29 @@ fieldset {
 
 .registrar-mobiliario {
   animation: fadeInUp 0.6s ease-out;
+}
+
+/* Estilos para modal */
+.modal {
+  z-index: 9999 !important;
+}
+
+.modal-backdrop {
+  z-index: 9998 !important;
+}
+
+/* Asegurar que el modal esté por encima de todo */
+:deep(.modal) {
+  z-index: 9999 !important;
+}
+
+:deep(.modal-backdrop) {
+  z-index: 9998 !important;
+}
+
+/* Mostrar mensajes de error siempre */
+.invalid-feedback.d-block {
+  display: block !important;
 }
 
 @keyframes fadeInUp {

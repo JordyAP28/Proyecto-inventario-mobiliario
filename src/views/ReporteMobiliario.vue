@@ -297,53 +297,102 @@
       </div>
     </div>
 
-    <!-- Modal de confirmación -->
+    <!-- Modal de confirmación mejorado -->
     <div 
       class="modal fade" 
       :class="{ show: showSuccessModal }"
       :style="{ display: showSuccessModal ? 'block' : 'none' }"
       tabindex="-1"
     >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title">
-              <i class="fas fa-check-circle me-2"></i>¡Reporte Enviado!
-            </h5>
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-success text-white text-center">
+            <div class="w-100">
+              <div class="modal-icon mb-2">
+                <i class="fas fa-check-circle fa-3x"></i>
+              </div>
+              <h4 class="modal-title mb-0">¡Reporte Enviado Exitosamente!</h4>
+            </div>
+          </div>
+          <div class="modal-body text-center py-4" v-if="lastReport">
+            <div class="success-animation mb-3">
+              <div class="checkmark-circle">
+                <div class="background"></div>
+                <div class="checkmark draw"></div>
+              </div>
+            </div>
+            
+            <h5 class="text-success mb-3">El daño ha sido reportado correctamente</h5>
+            
+            <div class="alert alert-success text-start">
+              <div class="row">
+                <div class="col-12 mb-2">
+                  <strong><i class="fas fa-barcode me-2"></i>Código de reporte:</strong> 
+                  <span class="badge bg-primary ms-2">{{ lastReport.codigo }}</span>
+                </div>
+                <div class="col-12 mb-2">
+                  <strong><i class="fas fa-chair me-2"></i>Mobiliario:</strong> 
+                  {{ lastReport.mobiliario }}
+                </div>
+                <div class="col-12 mb-2">
+                  <strong><i class="fas fa-tools me-2"></i>Tipo de daño:</strong> 
+                  {{ lastReport.tipoDano }}
+                </div>
+                <div class="col-12 mb-2">
+                  <strong><i class="fas fa-exclamation-triangle me-2"></i>Urgencia:</strong> 
+                  <span class="badge ms-2" :class="getUrgenciaBadgeClass(lastReport.urgencia)">
+                    {{ getUrgenciaText(lastReport.urgencia) }}
+                  </span>
+                </div>
+                <div class="col-12">
+                  <strong><i class="fas fa-calendar me-2"></i>Fecha:</strong> 
+                  {{ formatDate(new Date()) }}
+                </div>
+              </div>
+            </div>
+            
+            <div class="info-box bg-light p-3 rounded">
+              <p class="text-muted mb-2">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>¿Qué sigue ahora?</strong>
+              </p>
+              <ul class="list-unstyled text-muted small text-start">
+                <li><i class="fas fa-check text-success me-2"></i>El reporte ha sido registrado en el sistema</li>
+                <li><i class="fas fa-paper-plane text-info me-2"></i>Se notificará al departamento de mantenimiento</li>
+                <li><i class="fas fa-clock text-warning me-2"></i>Recibirá actualizaciones sobre el progreso</li>
+                <li v-if="lastReport.urgencia === 'critico' || lastReport.urgencia === 'alto'">
+                  <i class="fas fa-bolt text-danger me-2"></i>
+                  Por la urgencia, se atenderá con prioridad
+                </li>
+              </ul>
+            </div>
+            
+            <!-- Información adicional si se marcaron acciones especiales -->
+            <div v-if="form.retirarUso || form.peligroUsuarios" class="alert alert-warning mt-3">
+              <h6 class="alert-heading">
+                <i class="fas fa-exclamation-triangle me-2"></i>Atención Especial
+              </h6>
+              <ul class="list-unstyled mb-0 small">
+                <li v-if="form.retirarUso">
+                  <i class="fas fa-ban me-2"></i>El mobiliario será retirado del uso inmediatamente
+                </li>
+                <li v-if="form.peligroUsuarios">
+                  <i class="fas fa-shield-alt me-2"></i>Se ha marcado como peligro para usuarios
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="modal-footer justify-content-center border-0 pb-4">
             <button 
               type="button" 
-              class="btn-close btn-close-white" 
-              @click="showSuccessModal = false"
-            ></button>
-          </div>
-          <div class="modal-body" v-if="lastReport">
-            <div class="text-center mb-3">
-              <i class="fas fa-clipboard-check text-success" style="font-size: 3rem;"></i>
-            </div>
-            <h6 class="text-center">Reporte de daño registrado correctamente</h6>
-            <div class="alert alert-success">
-              <strong>Código de reporte:</strong> {{ lastReport.codigo }}<br>
-              <strong>Mobiliario:</strong> {{ lastReport.mobiliario }}<br>
-              <strong>Tipo de daño:</strong> {{ lastReport.tipoDano }}<br>
-              <strong>Nivel de urgencia:</strong> 
-              <span class="badge" :class="getUrgenciaBadgeClass(lastReport.urgencia)">
-                {{ getUrgenciaText(lastReport.urgencia) }}
-              </span>
-            </div>
-            <p class="text-muted small text-center">
-              El reporte ha sido enviado al departamento de mantenimiento para su revisión.
-            </p>
-          </div>
-          <div class="modal-footer justify-content-center">
-            <button 
-              type="button" 
-              class="btn btn-success" 
-              @click="showSuccessModal = false"
+              class="btn btn-success btn-lg me-2" 
+              @click="handleNewReport"
             >
-              <i class="fas fa-plus me-1"></i>Reportar Otro
+              <i class="fas fa-plus me-2"></i>Reportar Otro Daño
             </button>
-            <router-link to="/mantenimientos" class="btn btn-outline-primary">
-              <i class="fas fa-list me-1"></i>Ver Mantenimientos
+            <router-link to="/mantenimientos" class="btn btn-outline-primary btn-lg">
+              <i class="fas fa-list me-2"></i>Ver Todos los Reportes
             </router-link>
           </div>
         </div>
@@ -546,7 +595,10 @@ const validateForm = () => {
 }
 
 const handleSubmit = async () => {
+  console.log('🚀 Iniciando envío de reporte...')
+  
   if (!validateForm()) {
+    console.log('❌ Formulario no válido')
     return
   }
 
@@ -555,6 +607,7 @@ const handleSubmit = async () => {
   try {
     // Generar código de reporte
     const reportCode = `RPT-${Date.now()}`
+    console.log('📋 Código generado:', reportCode)
     
     // Crear objeto de reporte
     const reportData = {
@@ -573,49 +626,53 @@ const handleSubmit = async () => {
       peligroUsuarios: form.peligroUsuarios,
       retirarUso: form.retirarUso,
       comentarios: form.comentarios,
-      imagenes: form.imagenes.map(img => img.name), // Solo nombres para el ejemplo
+      imagenes: form.imagenes.map(img => img.name),
       estado: 'pendiente',
       fechaCreacion: new Date().toISOString(),
-      usuarioCreacion: user.value?.id
+      usuarioCreacion: user.value?.id || 'unknown'
     }
+
+    console.log('📊 Datos del reporte:', reportData)
 
     // Guardar reporte en localStorage
-    const reportes = getItem('damage_reports') || []
-    reportes.push(reportData)
-    setItem('damage_reports', reportes)
+    try {
+      // Obtener reportes existentes o inicializar array si no existe
+      const reportesExistentes = getItem('damage_reports') || []
+      console.log('📚 Reportes existentes:', reportesExistentes)
+      
+      // Agregar nuevo reporte
+      reportesExistentes.push(reportData)
+      
+      // Guardar en localStorage
+      const guardado = setItem('damage_reports', reportesExistentes)
+      
+      if (!guardado) {
+        throw new Error('No se pudo guardar el reporte en localStorage')
+      }
 
-    // Si el mobiliario requiere ser retirado del uso, actualizar su estado
-    if (form.retirarUso && mobiliarioEncontrado.value) {
-      mobiliarioStore.updateItem(mobiliarioEncontrado.value.id, {
-        estado: 'Fuera de servicio',
-        estadoColor: 'dark'
-      })
+      console.log('✅ Reporte guardado exitosamente')
+      console.log('📈 Total reportes:', reportesExistentes.length)
+
+      // Preparar datos para el modal
+      lastReport.value = {
+        codigo: reportCode,
+        mobiliario: `${mobiliarioEncontrado.value?.tipo} - ${form.codigoMobiliario}`,
+        tipoDano: getTipoDanoText(form.tipoDano),
+        urgencia: form.nivelUrgencia
+      }
+
+      // Mostrar modal de éxito
+      showSuccessModal.value = true
+
+    } catch (storageError) {
+      console.error('💾 Error al guardar en localStorage:', storageError)
+      throw new Error('Error al guardar el reporte en el almacenamiento local')
     }
-
-    // Registrar acción
-    authStore.addRecentAction({
-      type: 'report_damage',
-      description: 'Reportó daño en mobiliario',
-      details: `${mobiliarioEncontrado.value?.tipo} - ${form.codigoMobiliario}`
-    })
-
-    // Preparar datos para el modal
-    lastReport.value = {
-      codigo: reportCode,
-      mobiliario: `${mobiliarioEncontrado.value?.tipo} - ${form.codigoMobiliario}`,
-      tipoDano: getTipoDanoText(form.tipoDano),
-      urgencia: form.nivelUrgencia
-    }
-
-    // Mostrar modal de éxito
-    showSuccessModal.value = true
-
-    // Limpiar formulario
-    resetForm()
 
   } catch (error) {
-    console.error('Error al crear reporte:', error)
-    alert('Error al enviar el reporte. Intente nuevamente.')
+    console.error('❌ Error completo al crear reporte:', error)
+    console.error('📍 Stack trace:', error.stack)
+    alert(`Error al enviar el reporte: ${error.message}\n\nRevisa la consola del navegador para más detalles.`)
   } finally {
     loading.value = false
   }
@@ -625,6 +682,11 @@ const handleCancel = () => {
   if (confirm('¿Está seguro de cancelar? Se perderán todos los datos ingresados.')) {
     resetForm()
   }
+}
+
+const handleNewReport = () => {
+  showSuccessModal.value = false
+  resetForm()
 }
 
 const resetForm = () => {
@@ -677,20 +739,67 @@ const getUrgenciaText = (urgencia) => {
 const getUrgenciaBadgeClass = (urgencia) => {
   const classes = {
     'bajo': 'bg-success',
-    'medio': 'bg-warning',
+    'medio': 'bg-warning text-dark',
     'alto': 'bg-danger',
     'critico': 'bg-dark'
   }
   return classes[urgencia] || 'bg-secondary'
 }
 
+const formatDate = (date) => {
+  return date.toLocaleDateString('es-ES', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// Función para verificar localStorage (debugging)
+const verificarLocalStorage = () => {
+  try {
+    const reportes = getItem('damage_reports') || []
+    console.log('🗃️ Reportes en localStorage:', reportes)
+    return reportes
+  } catch (error) {
+    console.error('❌ Error al leer localStorage:', error)
+    return []
+  }
+}
+
 onMounted(() => {
+  console.log('🔧 Componente montado') // Debug
+  
   // Cargar items del inventario
-  mobiliarioStore.loadItems()
+  try {
+    mobiliarioStore.loadItems()
+    console.log('📦 Items del mobiliario cargados') // Debug
+  } catch (error) {
+    console.error('❌ Error al cargar items:', error)
+  }
   
   // Establecer usuario actual
   form.reportadoPor = user.value?.fullName || 'Usuario actual'
+  console.log('👤 Usuario actual:', form.reportadoPor) // Debug
+  
+  // Verificar localStorage
+  const reportesExistentes = verificarLocalStorage()
+  console.log(`📊 Se encontraron ${reportesExistentes.length} reportes existentes`) // Debug
 })
+
+// Función adicional para debugging - puedes llamarla desde la consola del navegador
+if (typeof window !== 'undefined') {
+  window.debugReportForm = {
+    verificarLocalStorage,
+    form,
+    errors,
+    mobiliarioEncontrado,
+    user,
+    showModal: () => showSuccessModal.value = true,
+    hideModal: () => showSuccessModal.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -759,6 +868,81 @@ onMounted(() => {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
+/* Estilos mejorados para el modal */
+.modal-content {
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.modal-header {
+  border-bottom: none;
+  padding: 2rem 1.5rem 1rem;
+}
+
+.modal-icon {
+  animation: bounceIn 0.8s ease-out;
+}
+
+.success-animation {
+  margin: 1rem 0;
+}
+
+.checkmark-circle {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  margin: 0 auto;
+}
+
+.checkmark-circle .background {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #28a745;
+  position: absolute;
+  animation: scaleIn 0.3s ease-in-out 0.9s both;
+}
+
+.checkmark-circle .checkmark {
+  border-radius: 5px;
+}
+
+.checkmark-circle .checkmark.draw:after {
+  animation-delay: 1.2s;
+  animation-duration: 0.3s;
+  animation-timing-function: ease;
+  animation-name: checkmark;
+  transform: scaleX(-1) rotate(135deg);
+  animation-fill-mode: forwards;
+}
+
+.checkmark-circle .checkmark:after {
+  opacity: 1;
+  height: 35px;
+  width: 15px;
+  transform-origin: left top;
+  border-right: 4px solid white;
+  border-top: 4px solid white;
+  border-radius: 2.5px;
+  content: '';
+  left: 25px;
+  top: 40px;
+  position: absolute;
+}
+
+.info-box {
+  border-left: 4px solid #28a745;
+}
+
+.btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -767,6 +951,74 @@ onMounted(() => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes checkmark {
+  0% {
+    height: 0;
+    width: 0;
+    opacity: 1;
+  }
+  20% {
+    height: 0;
+    width: 15px;
+    opacity: 1;
+  }
+  40% {
+    height: 35px;
+    width: 15px;
+    opacity: 1;
+  }
+  100% {
+    height: 35px;
+    width: 15px;
+    opacity: 1;
+  }
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .titulo-principal {
+    font-size: 1.8rem;
+  }
+  
+  .modal-dialog {
+    margin: 1rem;
+  }
+  
+  .btn-lg {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
   }
 }
 </style>

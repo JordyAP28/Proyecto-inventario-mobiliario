@@ -165,7 +165,7 @@
                     <option value="medicina">Medicina</option>
                     <option value="educacion">Educación</option>
                   </select>
-                  <div v-if="errors.nuevaFacultad" class="invalid-feedback">
+                  <div v-if="errors.nuevaFacultad" class="invalid-feedback d-block">
                     {{ errors.nuevaFacultad }}
                   </div>
                 </div>
@@ -179,7 +179,7 @@
                     placeholder="Ej: Aula 101, Lab 3"
                     :disabled="!selectedItem"
                   />
-                  <div v-if="errors.nuevaUbicacion" class="invalid-feedback">
+                  <div v-if="errors.nuevaUbicacion" class="invalid-feedback d-block">
                     {{ errors.nuevaUbicacion }}
                   </div>
                 </div>
@@ -199,7 +199,7 @@
                     <option value="docente">Docente Responsable</option>
                     <option value="administrativo">Personal Administrativo</option>
                   </select>
-                  <div v-if="errors.responsable" class="invalid-feedback">
+                  <div v-if="errors.responsable" class="invalid-feedback d-block">
                     {{ errors.responsable }}
                   </div>
                 </div>
@@ -213,7 +213,7 @@
                     :min="today"
                     :disabled="!selectedItem"
                   />
-                  <div v-if="errors.fechaReubicacion" class="invalid-feedback">
+                  <div v-if="errors.fechaReubicacion" class="invalid-feedback d-block">
                     {{ errors.fechaReubicacion }}
                   </div>
                 </div>
@@ -270,64 +270,67 @@
       </div>
     </div>
 
-    <!-- Modal de confirmación -->
-    <div 
-      class="modal fade" 
-      :class="{ show: showSuccessModal }"
-      :style="{ display: showSuccessModal ? 'block' : 'none' }"
-      tabindex="-1"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title">
-              <i class="fas fa-check-circle me-2"></i>¡Reubicación Exitosa!
-            </h5>
-            <button 
-              type="button" 
-              class="btn-close btn-close-white" 
-              @click="showSuccessModal = false"
-            ></button>
-          </div>
-          <div class="modal-body" v-if="lastReubication">
-            <div class="text-center mb-3">
-              <i class="fas fa-truck-moving text-success" style="font-size: 3rem;"></i>
+    <!-- Modal de confirmación - Usando Teleport -->
+    <Teleport to="body">
+      <div 
+        class="modal fade"
+        :class="{ show: showSuccessModal }"
+        :style="{ display: showSuccessModal ? 'block' : 'none' }"
+        tabindex="-1"
+        ref="successModalRef"
+      >
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+              <h5 class="modal-title">
+                <i class="fas fa-check-circle me-2"></i>¡Reubicación Exitosa!
+              </h5>
+              <button 
+                type="button" 
+                class="btn-close btn-close-white" 
+                @click="closeModal"
+              ></button>
             </div>
-            <h6 class="text-center">Mobiliario reubicado correctamente</h6>
-            <div class="alert alert-success">
-              <strong>Elemento:</strong> {{ lastReubication.item }}<br>
-              <strong>Desde:</strong> {{ lastReubication.from }}<br>
-              <strong>Hacia:</strong> {{ lastReubication.to }}<br>
-              <strong>Fecha:</strong> {{ formatDate(lastReubication.fecha) }}
+            <div class="modal-body" v-if="lastReubication">
+              <div class="text-center mb-3">
+                <i class="fas fa-truck-moving text-success" style="font-size: 3rem;"></i>
+              </div>
+              <h6 class="text-center">Mobiliario reubicado correctamente</h6>
+              <div class="alert alert-success">
+                <strong>Elemento:</strong> {{ lastReubication.item }}<br>
+                <strong>Desde:</strong> {{ lastReubication.from }}<br>
+                <strong>Hacia:</strong> {{ lastReubication.to }}<br>
+                <strong>Fecha:</strong> {{ formatDate(lastReubication.fecha) }}
+              </div>
             </div>
-          </div>
-          <div class="modal-footer justify-content-center">
-            <button 
-              type="button" 
-              class="btn btn-success" 
-              @click="showSuccessModal = false"
-            >
-              <i class="fas fa-plus me-1"></i>Reubicar Otro
-            </button>
-            <router-link to="/inventario" class="btn btn-outline-primary">
-              <i class="fas fa-list me-1"></i>Ver Inventario
-            </router-link>
+            <div class="modal-footer justify-content-center">
+              <button 
+                type="button" 
+                class="btn btn-success" 
+                @click="closeModal"
+              >
+                <i class="fas fa-plus me-1"></i>Reubicar Otro
+              </button>
+              <router-link to="/inventario" class="btn btn-outline-primary" @click="closeModal">
+                <i class="fas fa-list me-1"></i>Ver Inventario
+              </router-link>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Backdrop -->
-    <div 
-      v-if="showSuccessModal"
-      class="modal-backdrop fade show"
-      @click="showSuccessModal = false"
-    ></div>
+      <!-- Backdrop personalizado -->
+      <div 
+        v-if="showSuccessModal"
+        class="modal-backdrop fade show"
+        @click="closeModal"
+      ></div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, Teleport } from 'vue'
 import { useMobiliarioStore } from '@/stores/mobiliario'
 import { useAuthStore } from '@/stores/auth'
 
@@ -338,6 +341,7 @@ const loading = ref(false)
 const selectedItem = ref(null)
 const showSuccessModal = ref(false)
 const lastReubication = ref(null)
+const successModalRef = ref(null)
 
 const today = computed(() => new Date().toISOString().split('T')[0])
 
@@ -387,6 +391,10 @@ const filteredItems = computed(() => {
 })
 
 // Methods
+const closeModal = () => {
+  showSuccessModal.value = false
+}
+
 const applyFilters = () => {
   // Los filtros se aplican automáticamente via computed
 }
@@ -467,12 +475,21 @@ const handleSubmit = async () => {
   }
 
   if (!validateForm()) {
+    // Hacer scroll al primer error
+    const firstError = document.querySelector('.is-invalid')
+    if (firstError) {
+      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      firstError.focus()
+    }
     return
   }
 
   loading.value = true
 
   try {
+    // Simular delay para mostrar loading
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
     const edificios = {
       'ingenieria': 'Edificio A',
       'medicina': 'Edificio B',
@@ -513,6 +530,13 @@ const handleSubmit = async () => {
     // Mostrar modal de éxito
     showSuccessModal.value = true
 
+    // Auto cerrar después de 8 segundos
+    setTimeout(() => {
+      if (showSuccessModal.value) {
+        closeModal()
+      }
+    }, 8000)
+
     // Reset form
     resetForm()
     selectedItem.value = null
@@ -527,7 +551,11 @@ const handleSubmit = async () => {
 
 const resetForm = () => {
   Object.keys(form).forEach(key => {
-    form[key] = ''
+    if (key === 'fechaReubicacion') {
+      form[key] = today.value
+    } else {
+      form[key] = ''
+    }
   })
   Object.keys(errors).forEach(key => {
     errors[key] = ''
@@ -539,12 +567,43 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('es-ES')
 }
 
+// Prevenir scroll cuando el modal está abierto
+const handleModalToggle = (show) => {
+  if (show) {
+    document.body.style.overflow = 'hidden'
+    document.body.style.paddingRight = '15px' // Compensar scrollbar
+  } else {
+    document.body.style.overflow = ''
+    document.body.style.paddingRight = ''
+  }
+}
+
+// Watch para el modal
+const watchModal = () => {
+  return showSuccessModal.value
+}
+
 onMounted(() => {
   // Cargar items del inventario
   mobiliarioStore.loadItems()
   
   // Establecer fecha por defecto
   form.fechaReubicacion = today.value
+
+  // Watch manual para el modal
+  let lastModalState = false
+  setInterval(() => {
+    if (showSuccessModal.value !== lastModalState) {
+      handleModalToggle(showSuccessModal.value)
+      lastModalState = showSuccessModal.value
+    }
+  }, 100)
+})
+
+onUnmounted(() => {
+  // Restaurar scroll del body al desmontar
+  document.body.style.overflow = ''
+  document.body.style.paddingRight = ''
 })
 </script>
 
@@ -617,12 +676,50 @@ onMounted(() => {
   box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
 }
 
+/* Estilos para modal centrado */
+.modal {
+  z-index: 9999 !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .modal.show {
-  background-color: rgba(0, 0, 0, 0.5);
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-dialog-centered {
+  display: flex;
+  align-items: center;
+  min-height: calc(100% - 1rem);
 }
 
 .modal-backdrop {
+  z-index: 9998 !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Asegurar que el modal esté por encima de todo */
+:deep(.modal) {
+  z-index: 9999 !important;
+}
+
+:deep(.modal-backdrop) {
+  z-index: 9998 !important;
+}
+
+/* Mostrar mensajes de error siempre */
+.invalid-feedback.d-block {
+  display: block !important;
 }
 
 @keyframes fadeInUp {

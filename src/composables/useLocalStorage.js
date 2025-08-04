@@ -15,14 +15,20 @@ export function useLocalStorage() {
   
   const setItem = (key, value) => {
     try {
+      // Si el valor es un array y no existe la clave, inicializamos con array vacío
+      if (Array.isArray(value) && !localStorage.getItem(STORAGE_PREFIX + key)) {
+        localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify([]))
+      }
+      
       localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value))
-      return true
+      return getItem(key) // Devolvemos el valor guardado para confirmación
     } catch (error) {
       console.error(`Error setting ${key} in localStorage:`, error)
-      return false
+      return null
     }
   }
   
+  // Resto de las funciones permanecen igual...
   const removeItem = (key) => {
     try {
       localStorage.removeItem(STORAGE_PREFIX + key)
